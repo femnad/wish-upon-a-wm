@@ -6,10 +6,11 @@ import java.io.PrintWriter
 object Hello extends App {
 
   val name = "wish-upon-a-wm"
+  val oughtToBeEnough = 524288
 
   object Graphics extends Enumeration {
     type Graphics = Value
-    val SDL, VNC = Value
+    val SDL, VNC, None = Value
   }
 
   def writeToFile(content: String, fileName: String) = {
@@ -24,7 +25,7 @@ object Hello extends App {
         <graphics type="sdl" display="0.0" />
       case Graphics.VNC =>
         <graphics type="vnc" autoport="yes" />
-      case _ =>
+      case Graphics.None =>
         ""
     }
   }
@@ -63,8 +64,9 @@ object Hello extends App {
     val networkXML = getNetworkXML("default")
     writeToFile(networkXML.mkString, "network.xml")
 
-    val domainXML = getDomainXML(domainName="fool", memorySize=524288,
-      diskFile="disk.img", graphics="VNC")
+    val domainXML = getDomainXML(domainName=s"$domainName",
+      memorySize=oughtToBeEnough, diskFile="disk.img",
+      graphics="None")
 
     writeToFile(domainXML.mkString, "domain.xml")
     println(domainXML)
