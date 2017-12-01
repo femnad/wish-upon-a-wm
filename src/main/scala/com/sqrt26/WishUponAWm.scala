@@ -3,9 +3,12 @@ package com.sqrt26
 import java.io.File
 import java.io.PrintWriter
 
-object Hello extends App {
+import org.rogach.scallop._
+
+object WishUponAWm extends App {
 
   val name = "wish-upon-a-wm"
+  val defaultNumberOfCpus = 1
   val oughtToBeEnough = 524288
 
   object Graphics extends Enumeration {
@@ -31,14 +34,15 @@ object Hello extends App {
   }
 
   def getDomainXML(domainType: String = "kvm", osType: String = "hvm",
-    domainName: String, memorySize: Integer, diskFile: String,
-    graphics: String) = {
+    domainName: String, cpus: Integer, memorySize: Integer,
+    diskFile: String, graphics: String) = {
     val graphicsSelection = Graphics.withName(graphics)
 <domain type={ domainType }>
   <name>{ domainName }</name>
   <os>
     <type>{ osType }</type>
   </os>
+  <vcpu >{ cpus }</vcpu>
   <memory>{ memorySize }</memory>
   <devices>
     <disk type='file'>
@@ -60,13 +64,13 @@ object Hello extends App {
     </network>
   }
 
-  def buildDomainXML(domainName: String) = {
+  def buildDomainXML(config: Conf) = {
     val networkXML = getNetworkXML("default")
     writeToFile(networkXML.mkString, "network.xml")
 
-    val domainXML = getDomainXML(domainName=s"$domainName",
-      memorySize=oughtToBeEnough, diskFile="disk.img",
-      graphics="None")
+    val domainXML = getDomainXML(domainName=config.name(),
+      cpus=config.cpus(), memorySize=config.memory(),
+      diskFile="disk.img", graphics="None")
 
     writeToFile(domainXML.mkString, "domain.xml")
     println(domainXML)
@@ -74,11 +78,17 @@ object Hello extends App {
 
   def printUsage = println(s"usage: $name <domain-name>")
 
-  if (args.size == 1) {
-    val domainName = args.head
-    buildDomainXML(domainName)
-  } else {
-    printUsage
+  class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
+    val name = opt[String](required=true)
+    val cpus = opt[Int](default=Some(defaultNumberOfCpus))
+    val memory = opt[Int](default=Some(oughtToBeEnough))
+    verify()
   }
 
+  def main = {
+    val conf = new Conf(args)
+    buildDomainXML(conf)
+  }
+
+  main
 }
